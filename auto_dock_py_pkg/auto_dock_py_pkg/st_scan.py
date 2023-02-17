@@ -292,17 +292,17 @@ class SubscriberClass(Node):
             return dis_origin,theta_origin
         
 
-        def split_r_l_charger(x_list,y_list,cluster_dict,label_charger,idx_vtx_tri):
+        def set_sub_goal(x_list,y_list,cluster_dict,label_charger,idx_vtx_tri):
             plt.plot(x_list[idx_vtx_tri],y_list[idx_vtx_tri],"r^")
             fig = plt.gcf()
             ax = fig.gca()
-            circle2 = plt.Circle((x_list[idx_vtx_tri],y_list[idx_vtx_tri]), 0.2, color='m', fill=False)
-            circle3 = plt.Circle((x_list[idx_vtx_tri],y_list[idx_vtx_tri]), 0.35, color='g', fill=False)
+            circle1 = plt.Circle((x_list[idx_vtx_tri],y_list[idx_vtx_tri]), 0.2, color='m', fill=False)
+            # circle3 = plt.Circle((x_list[idx_vtx_tri],y_list[idx_vtx_tri]), 0.35, color='g', fill=False)
             
-            ax = plt.gca()
+            # ax = plt.gca()
             # ax.cla() # clear things for fresh plot
-            ax.add_patch(circle2)
-            ax.add_patch(circle3)
+            ax.add_patch(circle1)
+            # ax.add_patch(circle3)
             
             list_idx_charger = cluster_dict[label_charger]
             itls_idx_list = []
@@ -361,18 +361,56 @@ class SubscriberClass(Node):
             plt.plot(center_base_clean_x,center_base_clean_y,'k*')
             
             plt.plot([x_list[idx_vtx_tri],center_base_clean_x],[y_list[idx_vtx_tri],center_base_clean_y],'g')
-              
-            # plt.show()
-            return r_idx_list , l_idx_list
-        
-        def traj_point(x_list,y_list,idx_vtx_tri,dis_origin,theta_origin):
-            traj_base_x = dis_origin * math.cos(theta_origin)
-            traj_base_y = 0
-            traj_high_x = traj_base_x + 0
-            traj_high_y = traj_base_y + (dis_origin * math.sin(theta_origin))
+            slope_vg = (y_list[idx_vtx_tri]-center_base_clean_y)/(x_list[idx_vtx_tri]-center_base_clean_x)
+            theta_vg = math.atan(slope_vg)
+            print("--> slope_vg : "+str(slope_vg))
+            print("--> theta_vg : "+str(theta_vg))
+
+            origin_x = 0
+            origin_y = 0
+
+            vertex_x = x_list[idx_vtx_tri]
+            vertex_y = y_list[idx_vtx_tri]
+
+            tran_x = vertex_x
+            tran_y = vertex_y
+
+            line_1_x = [origin_x,tran_x]
+            line_1_y = [origin_y,tran_y]
+
+
+            # theta_rot = -math.pi*2/3
+            # dist_rot = 1
+            if theta_vg >= 0 :
+                theta_rot = theta_vg - math.pi
+            else :
+                theta_rot =  theta_vg
+            dist_rot = 0.35
+            circle2 = plt.Circle((x_list[idx_vtx_tri],y_list[idx_vtx_tri]), dist_rot,ls = "--", color='g', fill=False)
+            ax.add_patch(circle2)
+
+            blue_x = dist_rot*math.cos(theta_rot) + tran_x
+            blue_y = dist_rot*math.sin(theta_rot) + tran_y
+            print("--> blue_point(sub_goal) : "+str([blue_x,blue_y]))
+
+            line_2_x = [tran_x,blue_x]
+            line_2_y = [tran_y,blue_y]
+
+            line_3_x =  [origin_x,blue_x]
+            line_3_y =  [origin_y,blue_y]
             
-            # plt.plot([0,traj_base_x],[0,traj_base_y],'k')
-            # plt.plot([traj_base_x,traj_high_x],[traj_base_y,traj_high_y],'k')
+            sub_goal = [blue_x,blue_y]
+            # plt.plot(origin_x,origin_y,marker="o",color="g")
+            # plt.plot(tran_x,tran_y,marker="^",color="r")
+            # plt.plot(line_1_x,line_1_y,ls = "-", color='y')
+
+            plt.plot(blue_x,blue_y,marker="*",color="b")
+            plt.plot(line_2_x,line_2_y,ls = "-.", color='m')
+            plt.plot(line_3_x,line_3_y,ls = "--", color='#FFA500')
+            # plt.show()
+            return sub_goal
+        
+
             
             
             
@@ -411,14 +449,14 @@ class SubscriberClass(Node):
             print("xy cal : ",[x_cal,y_cal])
 
             dis_origin,theta_origin = cal_theta_distance(x_list,y_list,idx_vtx_tri)
-            split_r_l_charger(x_list,y_list,cluster_dict,label_charger,idx_vtx_tri)
-            traj_point(x_list,y_list,idx_vtx_tri,dis_origin,theta_origin)
+
             if list_dif_line == [] :
                 print("ERROR NOT FONUD -----------------------------------------------------------------------------------")
             else:
                 print("FOUNDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                 self.stack_theta.append(t*180/math.pi)
                 self.key_1 -= 1
+                set_sub_goal(x_list,y_list,cluster_dict,label_charger,idx_vtx_tri)
                 # print(self.key_1)
             plt.show()
 
