@@ -1,2 +1,2 @@
 # backup_auto_dock
-backup about automatic docking with carver
+backup about package automatic docking with carver
