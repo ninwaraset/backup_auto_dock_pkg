@@ -30,7 +30,7 @@ class SCAN(Node):
         super().__init__('state_scan')
         self.subscription_1 = self.create_subscription(LaserScan,'/scan',self.listener_callback_1,10)
 
-        self.lock_blue_sub = self.create_subscription(Float32,'/lock_blue',self.listener_callback_2,10)
+
         
         self.vertex_distance_publisher = self.create_publisher(Float32,'/vertex_distance',10)
         self.vertex_theta_publisher = self.create_publisher(Float32,'/vertex_theta',10)
@@ -49,14 +49,29 @@ class SCAN(Node):
         self.lidar_msgs = LaserScan()
 
 
+    
+        # self.subscription_2 = self.create_subscription(String,'/nav/state',self.listener_callback_2,10)
+        # self.subscription_3 = self.create_subscription(PoseWithCovarianceStamped,'/amcl_pose',self.listener_callback_3,10)
+
+
+        # self.cmd_publisher = self.create_publisher(String, 'topic', 10)
+        # self.marker_publisher = self.create_publisher(Marker, 'marker', 10)
+        # self.timer = self.create_timer(0.1, self.timer_callback)
+        # self.key_1 = False
+        
+        # self.point_from_scan = []
+        # self.amcl_rot = Twist()
+        # self.list_amcl_linear = [0.0,0.0,0.0]
+        # self.list_amcl_angular = [0.0,0.0,0.0]
+        # self.stack_x = []
+        # self.stack_y = []
         self.round_scan_init = 1
         self.round_scan = self.round_scan_init
         self.key_avg_scan = 1
         self.stack_theta_vertex = [0.0,0.0,0.0,0.0]
-
-        self.stack_distance_vertex = [0.0,0.0,0.0,0.0]
-        self.stack_theta_blue = [0.0,0.0,0.0,0.0]
-        self.stack_distance_blue = [0.0,0.0,0.0,0.0]
+        self.stack_distance_vertex =  [0.0,0.0,0.0,0.0]
+        self.stack_theta_blue =  [0.0,0.0,0.0,0.0]
+        self.stack_distance_blue =  [0.0,0.0,0.0,0.0]
         
 
         self.avg_vertex_distance = 0.0
@@ -64,21 +79,21 @@ class SCAN(Node):
 
         self.avg_blue_distance = 0.0
         self.avg_blue_theta = 0.0
-        self.T_x_lidar_baselink = 0.0
+        self.T_x_lidar_baselink = 0
         self.T_y_lidar_baselink = 0.49
 
         self.key_pub_to_move = 4
-
-        self.key_bug_1 = 0
-
-        self.msg_lock_blue = 0.0
-
 
     def listener_callback_1(self, msg):
         self.lidar_msgs = msg
 
     def listener_callback_2(self, msg):
-        self.msg_lock_blue = msg.data 
+        # print(msg.data)
+        if self.key_1 == False:
+            print(msg.data)
+        if msg.data == 'success':
+            self.key_1 = True
+        pass
 
 
 
@@ -123,10 +138,8 @@ class SCAN(Node):
             for i in range(len(x_list)):
 
                 lidar_list.append([x_list[i],y_list[i]])
-            
-            liadar_array = np.array(lidar_list)
-            # liadar_array = liadar_array.reshape(-1,1)
 
+            liadar_array = np.array(lidar_list)
 
             db = DBSCAN(eps=eps_value, min_samples=min_samples_value ).fit(liadar_array)
             labels = db.labels_
@@ -146,7 +159,40 @@ class SCAN(Node):
 
                 cluster_dict[i]=stack
             
-      
+            if show_plot == 1:
+                unique_labels = set(labels)
+                core_samples_mask = np.zeros_like(labels, dtype=bool)
+                core_samples_mask[db.core_sample_indices_] = True
+
+                colors = [plt.cm.Spectral(each) for each in np.linspace(0, 1, len(unique_labels))]
+                for k, col in zip(unique_labels, colors):
+                    if k == -1:
+                        # Black used for noise.
+                        col = [0, 0, 0, 1]
+
+                    class_member_mask = labels == k
+
+                    xy = liadar_array[class_member_mask & core_samples_mask]
+                    plt.plot(
+                        xy[:, 0],
+                        xy[:, 1],
+                        "o",
+                        markerfacecolor=tuple(col),
+                        markeredgecolor="k",
+                        markersize=14,
+                    )
+
+                    xy = liadar_array[class_member_mask & ~core_samples_mask]
+                    plt.plot(
+                        xy[:, 0],
+                        xy[:, 1],
+                        "o",
+                        markerfacecolor=tuple(col),
+                        markeredgecolor="k",
+                        markersize=6,
+                    )
+                # plt.title(f"Estimated number of clusters: {n_clusters_}")
+                ### plt.show()
             return cluster_dict 
      
         
@@ -331,11 +377,27 @@ class SCAN(Node):
                     l_idx_list.append( itls_idx_list[i])
                     point_l_x.append(x_list[itls_idx_list[i]])
                     point_l_y.append(y_list[itls_idx_list[i]])
-            # if l_idx_list == []:
-            #     l_idx_list = [1]
-            #     r_idx_list = [1]
-            print("x_list[l_idx_list[0]")
-            print(x_list[l_idx_list[0]])
+                    
+            # print("R : "+str(r_idx_list))
+            # print("L : "+str(l_idx_list))
+            # print(r_idx_list[-1])
+
+            ################## will change linear reg for real line *fix
+            line_r_x = [x_list[r_idx_list[0]],x_list[r_idx_list[-1]]]
+            line_r_y = [y_list[r_idx_list[0]],y_list[r_idx_list[-1]]]
+            # line_r_y = [y_list[r_idx_list[0]],y_list[idx_vtx_tri]]
+
+            line_l_x = [x_list[l_idx_list[0]],x_list[l_idx_list[-1]]]
+            line_l_y = [y_list[l_idx_list[0]],y_list[l_idx_list[-1]]]
+            # plt.xlim([-1.5, 1.5])
+            # plt.ylim([-0.5,1.5])
+            # plt.show()
+            # plt.cla()
+            # plt.plot(point_r_x,point_r_y,"g^")
+            # plt.plot(point_l_x,point_l_y,"y*")
+            plt.plot(line_r_x,line_r_y,"r",ls="--")
+            plt.plot(line_l_x,line_l_y,"b",ls= "--")
+            
             line_base_clean_x = [x_list[l_idx_list[0]],x_list[r_idx_list[-1]]]
             line_base_clean_y = [y_list[l_idx_list[0]],y_list[r_idx_list[-1]]]
             plt.plot(line_base_clean_x,line_base_clean_y,color= "#6500d7",ls="--")
@@ -400,7 +462,7 @@ class SCAN(Node):
             print("\n!! CALL SCAN FUNCTION !!")
             x_list,y_list = polar_to_xy()
 
-            cluster_dict = lidar_DBscan(x_list,y_list,eps_value=0.04,min_samples_value=5)
+            cluster_dict = lidar_DBscan(x_list,y_list,eps_value=0.05,min_samples_value=5)
 
 
             idx_vtx_tri,label_charger,list_dif_line = check_charger(x_list,y_list, cluster_dict)
@@ -445,41 +507,26 @@ class SCAN(Node):
 
                 # self.stack_theta_vertex.append(theta_vertex)
                 # self.stack_distance_vertex.append(distance_vertex)
-                # if distance_vertex > 0.05 and distance_vertex < -0.05:
-                #     self.key_bug_1 = 1
-
-                if self.msg_lock_blue == 0:
-                    blue_x,blue_y= set_sub_goal(x_list,y_list,cluster_dict,label_charger,idx_vtx_tri,distance_blue=0.7+self.T_y_lidar_baselink)
-                    print("c->blue piont : "+str([blue_x,blue_y]))
-                    distance_blue,theta_blue = cal_theta_distance(blue_x,blue_y)
-
-                    # theta_blue = theta_blue
-
-                    theta_blue_degree = ((theta_blue*180)/math.pi)
-
-                    
-
-                    print("c-> theta_blue(radius) : "+str(theta_blue))
-                    print("c-> theta_blue(degree) : "+str(theta_blue_degree))
-                    print("c-> distance_blue : "+str(distance_blue))
+                
 
 
-                    print("----------------------------------00000000---------------------------------")
-                    print("----------------------------------00000000---------------------------------")
-                    print("----------------------------------00000000---------------------------------")
+                blue_x,blue_y= set_sub_goal(x_list,y_list,cluster_dict,label_charger,idx_vtx_tri,distance_blue=0.7+self.T_y_lidar_baselink)
+                print("c->blue piont : "+str([blue_x,blue_y]))
+                distance_blue,theta_blue = cal_theta_distance(blue_x,blue_y)
 
+                # theta_blue = theta_blue
 
-                    # self.stack_theta_blue.append(theta_blue_degree)
-                    # self.stack_theta_blue.append(theta_blue)
-                    # self.stack_distance_blue.append(distance_blue)
-                else:
-                    theta_blue = 0.0
-                    distance_blue = 0.0
-                    print("----------------------------------1111111---------------------------------")
-                    print("----------------------------------1111111---------------------------------")
-                    print("----------------------------------1111111---------------------------------")
+                theta_blue_degree = ((theta_blue*180)/math.pi)
 
+                
 
+                print("c-> theta_blue(radius) : "+str(theta_blue))
+                print("c-> theta_blue(degree) : "+str(theta_blue_degree))
+                print("c-> distance_blue : "+str(distance_blue))
+                # self.stack_theta_blue.append(theta_blue_degree)
+                # self.stack_theta_blue.append(theta_blue)
+                # self.stack_distance_blue.append(distance_blue)
+                plt.show()
             return theta_vertex,distance_vertex,theta_blue,distance_blue
 
 ##########################################################################################################################################################################       
@@ -551,28 +598,8 @@ class SCAN(Node):
             self.avg_blue_distance = (sum(self.stack_distance_blue)/len(self.stack_theta_blue))
             print("avg stack_distance_blue: "+str(self.avg_blue_distance))
 
-        # plt.show()
+            
                 
-        # self.key_avg_scan = 0
-
-
-        
-            msg_vertex_distance= Float32()
-            msg_vertex_theta= Float32()
-            msg_blue_distance = Float32()
-            msg_blue_theta = Float32()
-            
-
-            msg_vertex_distance.data = self.avg_vertex_distance
-            msg_vertex_theta.data = self.avg_vertex_theta
-            
-            msg_blue_distance.data = self.avg_blue_distance
-            msg_blue_theta.data = self.avg_blue_theta
-
-            self.vertex_distance_publisher.publish(msg_vertex_distance)
-            self.vertex_theta_publisher.publish(msg_vertex_theta)
-            self.blue_distance_publisher.publish(msg_blue_distance)
-            self.blue_theta_publisher.publish(msg_blue_theta)
         else:
             print("waiting data...")
         # msg_main = Float32()
