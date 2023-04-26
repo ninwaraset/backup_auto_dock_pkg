@@ -177,12 +177,77 @@ class MOVE(Node):
 
             
         elif self.key_st == 5:
+            
+            
+            kp_4_1 = 0.2
+            e_4_1 = self.avg_vertex_theta
+            msg_cmd_vel.angular.z = e_4_1*kp_4_1
+        
+            kp_4_2 = 0.05
+            # e_4_2 = self.avg_vertex_distance + 0.805
+            e_4_2 = self.avg_vertex_distance 
+            
+            print("e_4_2")
+            print(e_4_2)
+            
+            v_4_2 = e_4_2*kp_4_2
+            if v_4_2 < 0.0025 and v_4_2>0:
+                v_4_2 = 0.0025
+                
+            if v_4_2 > -0.0025 and v_4_2<0:
+                v_4_2 = -0.0025
+            msg_cmd_vel.linear.x = -0.1
+            msg_lock_blue.data = 1.0
+            
+            if e_4_2 < 1+0.05 and e_4_2 > 1-0.05 :
+                self.key_st = 6
+
+                msg_cmd_vel.linear.x = 0.0
+                msg_cmd_vel.angular.z = 0.0
+                       
+        elif self.key_st == 6:
+            
+            
+            kp_4_1 = 0.2
+            e_4_1 = self.avg_vertex_theta
+            msg_cmd_vel.angular.z = e_4_1*kp_4_1
+        
+            kp_4_2 = 0.05
+            e_4_2 = self.avg_vertex_distance -0.805
+            v_4_2 = e_4_2*kp_4_2
+            if v_4_2 < 0.0025 and v_4_2>0:
+                v_4_2 = 0.0025
+                
+            if v_4_2 > -0.0025 and v_4_2<0:
+                v_4_2 = -0.0025
+            msg_cmd_vel.linear.x = v_4_2 
+            msg_lock_blue.data = 1.0
+            
+            if e_4_2 < 0.002 and e_4_2 > -0.002 :
+                self.key_st = 7
+
+                msg_cmd_vel.linear.x = 0.0
+                msg_cmd_vel.angular.z = 0.0
+
+
+
+            
+        elif self.key_st == 7:
 
             msg_lock_blue.data = 1.0
             msg_cmd_vel.linear.x = 0.0
             msg_cmd_vel.angular.z = 0.0
             print("  GOAL !!!! ")
+            
+            
+        print("msg_cmd_vel.linear.x ")
+        print(msg_cmd_vel.linear.x )
         
+        
+        print("msg_cmd_vel.angular.z")
+        print(msg_cmd_vel.angular.z)
+
+
         self.cmd_publisher.publish(msg_cmd_vel)
         
         self.lock_blue_pub.publish(msg_lock_blue)
