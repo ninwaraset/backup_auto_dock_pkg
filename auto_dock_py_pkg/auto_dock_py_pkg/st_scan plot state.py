@@ -452,51 +452,39 @@ class SCAN(Node):
                 # self.stack_distance_vertex.append(distance_vertex)
                 # if distance_vertex > 0.05 and distance_vertex < -0.05:
                 #     self.key_bug_1 = 1
-    ####edit
-                # if self.msg_lock_blue == 0:
-                #     blue_x,blue_y= set_sub_goal(x_list,y_list,cluster_dict,label_charger,idx_vtx_tri,distance_blue=0.7+self.T_y_lidar_baselink)
-                #     print("c->blue piont : "+str([blue_x,blue_y]))
-                #     distance_blue,theta_blue = cal_theta_distance(blue_x,blue_y)
 
-                #     # theta_blue = theta_blue
+                if self.msg_lock_blue == 0:
+                    blue_x,blue_y= set_sub_goal(x_list,y_list,cluster_dict,label_charger,idx_vtx_tri,distance_blue=0.7+self.T_y_lidar_baselink)
+                    print("c->blue piont : "+str([blue_x,blue_y]))
+                    distance_blue,theta_blue = cal_theta_distance(blue_x,blue_y)
 
-                #     theta_blue_degree = ((theta_blue*180)/math.pi)
+                    # theta_blue = theta_blue
+
+                    theta_blue_degree = ((theta_blue*180)/math.pi)
 
                     
 
-                #     print("c-> theta_blue(radius) : "+str(theta_blue))
-                #     print("c-> theta_blue(degree) : "+str(theta_blue_degree))
-                #     print("c-> distance_blue : "+str(distance_blue))
+                    print("c-> theta_blue(radius) : "+str(theta_blue))
+                    print("c-> theta_blue(degree) : "+str(theta_blue_degree))
+                    print("c-> distance_blue : "+str(distance_blue))
 
 
-                #     print("----------------------------------00000000---------------------------------")
-                #     print("----------------------------------00000000---------------------------------")
-                #     print("----------------------------------00000000---------------------------------")
+                    print("----------------------------------00000000---------------------------------")
+                    print("----------------------------------00000000---------------------------------")
+                    print("----------------------------------00000000---------------------------------")
 
 
-                #     # self.stack_theta_blue.append(theta_blue_degree)
-                #     # self.stack_theta_blue.append(theta_blue)
-                #     # self.stack_distance_blue.append(distance_blue)
-                # else:
-                #     theta_blue = 0.0
-                #     distance_blue = 0.0
-                #     print("----------------------------------1111111---------------------------------")
-                #     print("----------------------------------1111111---------------------------------")
-                #     print("----------------------------------1111111---------------------------------")
+                    # self.stack_theta_blue.append(theta_blue_degree)
+                    # self.stack_theta_blue.append(theta_blue)
+                    # self.stack_distance_blue.append(distance_blue)
+                else:
+                    theta_blue = 0.0
+                    distance_blue = 0.0
+                    print("----------------------------------1111111---------------------------------")
+                    print("----------------------------------1111111---------------------------------")
+                    print("----------------------------------1111111---------------------------------")
 
-                blue_x,blue_y= set_sub_goal(x_list,y_list,cluster_dict,label_charger,idx_vtx_tri,distance_blue=0.7+self.T_y_lidar_baselink)
-                print("c->blue piont : "+str([blue_x,blue_y]))
-                distance_blue,theta_blue = cal_theta_distance(blue_x,blue_y)
 
-                # theta_blue = theta_blue
-
-                theta_blue_degree = ((theta_blue*180)/math.pi)
-
-                
-
-                print("c-> theta_blue(radius) : "+str(theta_blue))
-                print("c-> theta_blue(degree) : "+str(theta_blue_degree))
-                print("c-> distance_blue : "+str(distance_blue))
             return theta_vertex,distance_vertex,theta_blue,distance_blue
 
 ##########################################################################################################################################################################       

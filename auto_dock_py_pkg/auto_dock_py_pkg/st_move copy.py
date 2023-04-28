@@ -198,8 +198,8 @@ class MOVE(Node):
                 v_4_2 = -0.0025
             msg_cmd_vel.linear.x = -0.1
             msg_lock_blue.data = 1.0
-            
-            if e_4_2 < 1+0.05 and e_4_2 > 1-0.05 :
+            bw = 2
+            if e_4_2 < 2+0.05 and e_4_2 > 2-0.05 :
                 self.key_st = 6
 
                 msg_cmd_vel.linear.x = 0.0

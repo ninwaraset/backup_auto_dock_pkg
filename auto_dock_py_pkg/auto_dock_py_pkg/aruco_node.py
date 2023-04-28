@@ -77,7 +77,7 @@ class ArucoDetector(Node):
             # Initialize camera matrix and distortion coefficients
             self.camera_matrix = np.array([[self.K[0],0,self.K[2]], [0, self.K[4], self.K[5]], [0, 0, 1]])
             self.dist_coeffs = np.array([0.0, 0.0, 0.0, 0.0, 0.0])
-            marker_size = 0.04 # (meter)
+            marker_size = 0.10 # (meter)
             # rvecs: orientation (radian), tvecs: position (meter)
             rvecs, tvecs, _ = cv2.aruco.estimatePoseSingleMarkers(corners,marker_size,self.camera_matrix, self.dist_coeffs)
             
@@ -93,6 +93,14 @@ class ArucoDetector(Node):
             pose_msg.pose.orientation.w = 1.0
             self.publisher_pose.publish(pose_msg)
             self.publish_transform(pose_msg)
+            print("x: "+str(pose_msg.pose.position.x ))
+            print("y: "+str(pose_msg.pose.position.y ))
+            print("z: "+str(pose_msg.pose.position.z ))
+            
+            print("-------")
+            # print(str(000))
+            # print(" ")
+
 
 def main(args=None):
     rclpy.init(args=args)
