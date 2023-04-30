@@ -11,6 +11,7 @@ from geometry_msgs.msg import PoseStamped, TransformStamped
 from std_msgs.msg import Int16
 from sensor_msgs.msg import CameraInfo
 
+
 class ArucoDetector(Node):
     def __init__(self):
         super().__init__('aruco_detector')
@@ -93,16 +94,21 @@ class ArucoDetector(Node):
             pose_msg.pose.orientation.w = 1.0
             self.publisher_pose.publish(pose_msg)
             self.publish_transform(pose_msg)
-            print("x: "+str(pose_msg.pose.position.x ))
-            print("y: "+str(pose_msg.pose.position.y ))
-            print("z: "+str(pose_msg.pose.position.z ))
+            # print("x: "+str(pose_msg.pose.position.x ))
+            # print("y: "+str(pose_msg.pose.position.y ))
+            # print("z: "+str(pose_msg.pose.position.z ))
             
-            print("-------")
+            # print("-------")
             # print(str(000))
             # print(" ")
+            # self.get_logger().info('Publishing: "%s"' % msg.data)
+            # self.get_logger().info("Working")
+            print("aruco working.......")
 
 
 def main(args=None):
+    # self.get_logger().info("Working")
+    
     rclpy.init(args=args)
     aruco_detector = ArucoDetector()
     rclpy.spin(aruco_detector)

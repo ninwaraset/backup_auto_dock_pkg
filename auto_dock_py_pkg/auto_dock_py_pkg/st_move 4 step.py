@@ -21,7 +21,7 @@ class MOVE(Node):
         self.lock_blue_pub = self.create_publisher(Float32,'/lock_blue',10)
         self.finish_plot_pub = self.create_publisher(Float32,'/finish_plot',10)
         
-        self.time_work_publisher = self.create_publisher(Float32,'/time_work',10)
+
         time_period_1 = 0.1
         self.timer_1 = self.create_timer(time_period_1,self.timer_1_callback)
         
@@ -96,9 +96,6 @@ class MOVE(Node):
         msg_lock_blue = Float32()
         msg_f_p = Float32()
         msg_f_p.data = 0.0
-        
-        msg_time_work = Float32()
-        msg_time_work.data = 0.0
         # print(self.zxc)
         # if self.zxc > 200:
         #     msg_f_p.data = 1.0
@@ -274,11 +271,6 @@ class MOVE(Node):
             self.time_d = self.t_c-self.t_i
   
         print("time : "+str(self.time_d))
-        
-        
-        msg_time_work.data = self.time_d 
-        
-        self.time_work_publisher.publish(msg_time_work)
         
         print("----------------------------")
         pass

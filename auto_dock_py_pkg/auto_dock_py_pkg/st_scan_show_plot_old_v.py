@@ -16,7 +16,7 @@ from visualization_msgs.msg import Marker
 from std_msgs.msg import Float32
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-from geometry_msgs.msg import PoseWithCovarianceStamped,PoseStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped
 from matplotlib.animation import FuncAnimation
 import numpy as np
 from sklearn.cluster import DBSCAN
@@ -28,10 +28,9 @@ class SCAN(Node):
     def __init__(self):
         # print("2")
         super().__init__('state_scan')
-        
         self.subscription_1 = self.create_subscription(LaserScan,'/scan',self.listener_callback_1,10)
 
-        self.lock_blue_sub = self.create_subscription(Float32,'/lock_blue',self.listener_callback_2,10)
+
         
         self.vertex_distance_publisher = self.create_publisher(Float32,'/vertex_distance',10)
         self.vertex_theta_publisher = self.create_publisher(Float32,'/vertex_theta',10)
@@ -40,7 +39,6 @@ class SCAN(Node):
         self.blue_theta_publisher = self.create_publisher(Float32,'/blue_theta',10)
 
         self.main_pub = self.create_publisher(Float32,'/main',10)
-        self.publisher_pose = self.create_publisher(PoseStamped, '/pose_vertrex', 10)
 
         time_period_1 = 0.1
         self.timer_1 = self.create_timer(time_period_1,self.timer_1_callback)
@@ -50,15 +48,30 @@ class SCAN(Node):
 
         self.lidar_msgs = LaserScan()
 
-        self.pose_msg = PoseStamped()
+
+    
+        # self.subscription_2 = self.create_subscription(String,'/nav/state',self.listener_callback_2,10)
+        # self.subscription_3 = self.create_subscription(PoseWithCovarianceStamped,'/amcl_pose',self.listener_callback_3,10)
+
+
+        # self.cmd_publisher = self.create_publisher(String, 'topic', 10)
+        # self.marker_publisher = self.create_publisher(Marker, 'marker', 10)
+        # self.timer = self.create_timer(0.1, self.timer_callback)
+        # self.key_1 = False
+        
+        # self.point_from_scan = []
+        # self.amcl_rot = Twist()
+        # self.list_amcl_linear = [0.0,0.0,0.0]
+        # self.list_amcl_angular = [0.0,0.0,0.0]
+        # self.stack_x = []
+        # self.stack_y = []
         self.round_scan_init = 1
         self.round_scan = self.round_scan_init
         self.key_avg_scan = 1
         self.stack_theta_vertex = [0.0,0.0,0.0,0.0]
-
-        self.stack_distance_vertex = [0.0,0.0,0.0,0.0]
-        self.stack_theta_blue = [0.0,0.0,0.0,0.0]
-        self.stack_distance_blue = [0.0,0.0,0.0,0.0]
+        self.stack_distance_vertex =  [0.0,0.0,0.0,0.0]
+        self.stack_theta_blue =  [0.0,0.0,0.0,0.0]
+        self.stack_distance_blue =  [0.0,0.0,0.0,0.0]
         
 
         self.avg_vertex_distance = 0.0
@@ -66,21 +79,21 @@ class SCAN(Node):
 
         self.avg_blue_distance = 0.0
         self.avg_blue_theta = 0.0
-        self.T_x_lidar_baselink = 0.0
+        self.T_x_lidar_baselink = 0
         self.T_y_lidar_baselink = 0.49
 
         self.key_pub_to_move = 4
-
-        self.key_bug_1 = 0
-
-        self.msg_lock_blue = 0.0
-
 
     def listener_callback_1(self, msg):
         self.lidar_msgs = msg
 
     def listener_callback_2(self, msg):
-        self.msg_lock_blue = msg.data 
+        # print(msg.data)
+        if self.key_1 == False:
+            print(msg.data)
+        if msg.data == 'success':
+            self.key_1 = True
+        pass
 
 
 
@@ -120,23 +133,21 @@ class SCAN(Node):
 
 
         def lidar_DBscan(x_list,y_list,eps_value=0.04,min_samples_value=5,show_plot = 1):
-            # print("\n++ DB SCAN ++")
+            print("\n++ DB SCAN ++")
             lidar_list = []
             for i in range(len(x_list)):
 
                 lidar_list.append([x_list[i],y_list[i]])
-            
-            liadar_array = np.array(lidar_list)
-            # liadar_array = liadar_array.reshape(-1,1)
 
+            liadar_array = np.array(lidar_list)
 
             db = DBSCAN(eps=eps_value, min_samples=min_samples_value ).fit(liadar_array)
             labels = db.labels_
             n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
             n_noise_ = list(labels).count(-1)
 
-            # print(" --> Estimated number of clusters: %d" % n_clusters_)
-            # print(" --> Estimated number of noise points: %d" % n_noise_)
+            print(" --> Estimated number of clusters: %d" % n_clusters_)
+            print(" --> Estimated number of noise points: %d" % n_noise_)
 
             cluster_dict = {}
 
@@ -148,12 +159,45 @@ class SCAN(Node):
 
                 cluster_dict[i]=stack
             
-      
+            if show_plot == 1:
+                unique_labels = set(labels)
+                core_samples_mask = np.zeros_like(labels, dtype=bool)
+                core_samples_mask[db.core_sample_indices_] = True
+
+                colors = [plt.cm.Spectral(each) for each in np.linspace(0, 1, len(unique_labels))]
+                for k, col in zip(unique_labels, colors):
+                    if k == -1:
+                        # Black used for noise.
+                        col = [0, 0, 0, 1]
+
+                    class_member_mask = labels == k
+
+                    xy = liadar_array[class_member_mask & core_samples_mask]
+                    plt.plot(
+                        xy[:, 0],
+                        xy[:, 1],
+                        "o",
+                        markerfacecolor=tuple(col),
+                        markeredgecolor="k",
+                        markersize=14,
+                    )
+
+                    xy = liadar_array[class_member_mask & ~core_samples_mask]
+                    plt.plot(
+                        xy[:, 0],
+                        xy[:, 1],
+                        "o",
+                        markerfacecolor=tuple(col),
+                        markeredgecolor="k",
+                        markersize=6,
+                    )
+                # plt.title(f"Estimated number of clusters: {n_clusters_}")
+                ### plt.show()
             return cluster_dict 
      
         
         def check_charger(x_list,y_list, cluster_dict,lenght_base =0.50,range_e_base = 0.1,threshold_high = 0.15,threshold_l_r_line = 0.05):
-            # print("\n++ FIND CHARGER ++")
+            print("\n++ FIND CHARGER ++")
             true_index_vertex_point_tri_of_cluster = 0
             list_dif_line = []
             dis_list = []
@@ -175,20 +219,20 @@ class SCAN(Node):
                 dif_y = (y_list[max(cluster_dict[i])]-y_list[min(cluster_dict[i])])
                 pow_dif_y = dif_y**2
                 dis_xy = math.sqrt(pow_dif_x+pow_dif_y)
-                # print(" --> dis_base_xy cluster "+str(i)+" : "+str(dis_xy))
+                print(" --> dis_base_xy cluster "+str(i)+" : "+str(dis_xy))
                 
                 if abs(dis_xy - lenght_base) <= range_e_base : 
-                    # print("          ---")
-                    # print("  # feature cluster : "+str(i))
+                    print("          ---")
+                    print("  # feature cluster : "+str(i))
                     dis_list.append(dis_xy)
                     center_base_x = (x_list[max(cluster_dict[i])]+x_list[min(cluster_dict[i])])/2
                     center_base_y  = (y_list[max(cluster_dict[i])]+y_list[min(cluster_dict[i])])/2
-                    # plt.plot(center_base_x,center_base_y,marker="h",color = "g")
+                    plt.plot(center_base_x,center_base_y,marker="h",color = "g")
                     
                     slope_charger = dif_y/dif_x
-                    # print("  o--> slope_base_tri : "+str(slope_charger))
+                    print("  o--> slope_base_tri : "+str(slope_charger))
                     theta_charger = math.atan(slope_charger)
-                    # print("  o--> theta_charger : "+str(theta_charger))
+                    print("  o--> theta_charger : "+str(theta_charger))
 
 
                     x_rot_z_list = []
@@ -210,15 +254,15 @@ class SCAN(Node):
 
                     # plt.plot([min_x_rot,min_x_rot],[min_y_rot,max_y_rot],"m")
                     dif_y_rot = max_y_rot-min_y_rot 
-                    # print("  o--> dif_y_rot (high triangel measure) : "+str(dif_y_rot))
-                    # print("          ---")
+                    print("  o--> dif_y_rot (high triangel measure) : "+str(dif_y_rot))
+                    print("          ---")
                     if  dif_y_rot > threshold_high :
-                        # print("    # analys triangle ")
+                        print("    # analys triangle ")
                         
                         index_vertex_point_tri_of_list = y_rot_z_list.index(max(y_rot_z_list))
                         # print("index_vertex_point_tri_of_list : "+str(index_vertex_point_tri_of_list))
                         index_vertex_point_tri_of_cluster = index_start_point_cluster+index_vertex_point_tri_of_list 
-                        # plt.plot(x_list[index_vertex_point_tri_of_cluster],y_list[index_vertex_point_tri_of_cluster],"wX")
+                        plt.plot(x_list[index_vertex_point_tri_of_cluster],y_list[index_vertex_point_tri_of_cluster],"wX")
                         # print("index_max_point_of_cluster : "+str(index_vertex_point_tri_of_cluster))
                         label_cluster_charger = i
                         # print("label_cluster_charger : "+str(label_cluster_charger))
@@ -235,22 +279,22 @@ class SCAN(Node):
                         check_line_l_pow_dif_y = check_line_l_dif_y**2
                         check_line_l_dis = math.sqrt(check_line_l_pow_dif_x + check_line_l_pow_dif_y)
 
-                        # print("    x--> line r distance : "+str(check_line_r_dis))
-                        # print("    x--> line l distance : "+str(check_line_l_dis))
+                        print("    x--> line r distance : "+str(check_line_r_dis))
+                        print("    x--> line l distance : "+str(check_line_l_dis))
 
                         line_r_l_dif = abs(check_line_l_dis-check_line_r_dis)
-                        # print("    x--> difference r l : " + ostr(line_r_l_dif) )
+                        print("    x--> difference r l : " + str(line_r_l_dif) )
 
-                        # plt.plot(x_list[index_end_point_cluster],y_list[index_end_point_cluster],'ks')
-                        # plt.plot(x_list[index_start_point_cluster],y_list[index_start_point_cluster],'ks')
-                        # plt.plot([x_list[index_start_point_cluster],x_list[index_vertex_point_tri_of_cluster]],[y_list[index_start_point_cluster],y_list[index_vertex_point_tri_of_cluster]],'m',ls=":")
-                        # plt.plot([x_list[index_end_point_cluster],x_list[index_vertex_point_tri_of_cluster]],[y_list[index_end_point_cluster],y_list[index_vertex_point_tri_of_cluster]],'m',ls=":")
+                        plt.plot(x_list[index_end_point_cluster],y_list[index_end_point_cluster],'ks')
+                        plt.plot(x_list[index_start_point_cluster],y_list[index_start_point_cluster],'ks')
+                        plt.plot([x_list[index_start_point_cluster],x_list[index_vertex_point_tri_of_cluster]],[y_list[index_start_point_cluster],y_list[index_vertex_point_tri_of_cluster]],'m',ls=":")
+                        plt.plot([x_list[index_end_point_cluster],x_list[index_vertex_point_tri_of_cluster]],[y_list[index_end_point_cluster],y_list[index_vertex_point_tri_of_cluster]],'m',ls=":")
                         
                         if abs(line_r_l_dif) <= threshold_l_r_line :
                             list_dif_line.append(line_r_l_dif)
                             true_index_vertex_point_tri_of_cluster = index_vertex_point_tri_of_cluster
-                            # print
-                            # print("\n             +++++ VERTEX CHARGER FOUND +++++    \n")
+                            print
+                            print("\n             +++++ VERTEX CHARGER FOUND +++++    \n")
 
 
 
@@ -261,7 +305,7 @@ class SCAN(Node):
                 # print(x_list[0])
                 # print(line_dis_x)
                 # print(line_dis_y)
-                # plt.plot(line_dis_x,line_dis_y,"#fdfa28",ls="--")
+                plt.plot(line_dis_x,line_dis_y,"#fdfa28",ls="--")
                 
             # true_index_vertex_point_tri_of_cluster0
             # print("dis_list"+str(dis_list))
@@ -293,8 +337,8 @@ class SCAN(Node):
         
 
         def set_sub_goal(x_list,y_list,cluster_dict,label_charger,idx_vtx_tri,radius_vertex = 0.18,distance_blue= 0.7):
-            # print("\n++ SET SUB GOAL ++")
-            # plt.plot(x_list[idx_vtx_tri],y_list[idx_vtx_tri],"r^")
+            print("\n++ SET SUB GOAL ++")
+            plt.plot(x_list[idx_vtx_tri],y_list[idx_vtx_tri],"r^")
             fig = plt.gcf()
             ax = fig.gca()
             circle1 = plt.Circle((x_list[idx_vtx_tri],y_list[idx_vtx_tri]), radius_vertex,ls = "--", color='m', fill=False)
@@ -307,15 +351,14 @@ class SCAN(Node):
             
             list_idx_charger = cluster_dict[label_charger]
             itls_idx_list = []
-            for i in range(len(x_list)):
-                dif_x = x_list[idx_vtx_tri]-x_list[i]
-                dif_y = y_list[idx_vtx_tri]-y_list[i]
+            for i in range(len(list_idx_charger)):
+                dif_x = x_list[idx_vtx_tri]-x_list[list_idx_charger[i]]
+                dif_y = y_list[idx_vtx_tri]-y_list[list_idx_charger[i]]
                 pow_dif_x = dif_x**2
                 pow_dif_y = dif_y**2
                 dis_xy = math.sqrt(pow_dif_x+pow_dif_y)
                 if dis_xy <= radius_vertex :
-                    itls_idx_list.append(i)
-                    # print(i)
+                    itls_idx_list.append(list_idx_charger[i])
 
             # print( itls_idx_list)
             r_idx_list = []
@@ -324,7 +367,7 @@ class SCAN(Node):
             point_r_y = []
             point_l_x = []
             point_l_y = []
-            # plt.cla()
+
             for i in range(len(itls_idx_list)):
                 if itls_idx_list[i] >= idx_vtx_tri:
                     r_idx_list.append( itls_idx_list[i])
@@ -334,27 +377,39 @@ class SCAN(Node):
                     l_idx_list.append( itls_idx_list[i])
                     point_l_x.append(x_list[itls_idx_list[i]])
                     point_l_y.append(y_list[itls_idx_list[i]])
-            # print(point_r_x)
-            # print("")
-            # print(point_l_x)
+                    
+            # print("R : "+str(r_idx_list))
+            # print("L : "+str(l_idx_list))
+            # print(r_idx_list[-1])
+
+            ################## will change linear reg for real line *fix
+            line_r_x = [x_list[r_idx_list[0]],x_list[r_idx_list[-1]]]
+            line_r_y = [y_list[r_idx_list[0]],y_list[r_idx_list[-1]]]
+            # line_r_y = [y_list[r_idx_list[0]],y_list[idx_vtx_tri]]
+
+            line_l_x = [x_list[l_idx_list[0]],x_list[l_idx_list[-1]]]
+            line_l_y = [y_list[l_idx_list[0]],y_list[l_idx_list[-1]]]
+            # plt.xlim([-1.5, 1.5])
+            # plt.ylim([-0.5,1.5])
+            # plt.show()
+            # plt.cla()
+            # plt.plot(point_r_x,point_r_y,"g^")
+            # plt.plot(point_l_x,point_l_y,"y*")
+            plt.plot(line_r_x,line_r_y,"r",ls="--")
+            plt.plot(line_l_x,line_l_y,"b",ls= "--")
             
-            # if l_idx_list == []:
-            #     l_idx_list = [1]
-            #     r_idx_list = [1]
-            # print("x_list[l_idx_list[0]")
-            # print(x_list[l_idx_list[0]])
             line_base_clean_x = [x_list[l_idx_list[0]],x_list[r_idx_list[-1]]]
             line_base_clean_y = [y_list[l_idx_list[0]],y_list[r_idx_list[-1]]]
-            # plt.plot(line_base_clean_x,line_base_clean_y,color= "#6500d7",ls="--")
+            plt.plot(line_base_clean_x,line_base_clean_y,color= "#6500d7",ls="--")
             center_base_clean_x = sum( line_base_clean_x)/2
             center_base_clean_y = sum( line_base_clean_y)/2
-            # plt.plot(center_base_clean_x,center_base_clean_y,'k*')
+            plt.plot(center_base_clean_x,center_base_clean_y,'k*')
             
-            # plt.plot([x_list[idx_vtx_tri],center_base_clean_x],[y_list[idx_vtx_tri],center_base_clean_y],'g',ls="-.")
+            plt.plot([x_list[idx_vtx_tri],center_base_clean_x],[y_list[idx_vtx_tri],center_base_clean_y],'g',ls="-.")
             slope_vg = (y_list[idx_vtx_tri]-center_base_clean_y)/(x_list[idx_vtx_tri]-center_base_clean_x)
             theta_vg = math.atan(slope_vg)
-            # print(" --> slope_vertex to center base : "+str(slope_vg))
-            # print(" --> theta_vertex to center base  : "+str(theta_vg))
+            print(" --> slope_vertex to center base : "+str(slope_vg))
+            print(" --> theta_vertex to center base  : "+str(theta_vg))
 
             origin_x = 0
             origin_y = 0
@@ -381,7 +436,7 @@ class SCAN(Node):
 
             blue_x = dist_rot*math.cos(theta_rot) + tran_x
             blue_y = dist_rot*math.sin(theta_rot) + tran_y
-            # print(" --> sub_goal(blue_point) : "+str([blue_x,blue_y]))
+            print(" --> sub_goal(blue_point) : "+str([blue_x,blue_y]))
 
             line_2_x = [tran_x,blue_x]
             line_2_y = [tran_y,blue_y]
@@ -394,9 +449,9 @@ class SCAN(Node):
             # plt.plot(tran_x,tran_y,marker="^",color="r")
             # plt.plot(line_1_x,line_1_y,ls = "-", color='y')
 
-            # plt.plot(blue_x,blue_y,marker="*",color="b")
-            # plt.plot(line_2_x,line_2_y,ls = "-.", color='#19e59e')
-            # plt.plot(line_3_x,line_3_y,ls = "-", color='#FFA500')
+            plt.plot(blue_x,blue_y,marker="*",color="b")
+            plt.plot(line_2_x,line_2_y,ls = "-.", color='#19e59e')
+            plt.plot(line_3_x,line_3_y,ls = "-", color='#FFA500')
             # plt.show()
             return sub_goal
         
@@ -404,42 +459,41 @@ class SCAN(Node):
 ##########################################################################################################################################################################
 
         def call_scan():
-            # print("\n!! CALL SCAN FUNCTION !!")
+            print("\n!! CALL SCAN FUNCTION !!")
             x_list,y_list = polar_to_xy()
 
-            cluster_dict = lidar_DBscan(x_list,y_list,eps_value=0.04,min_samples_value=5)
+            cluster_dict = lidar_DBscan(x_list,y_list,eps_value=0.05,min_samples_value=5)
 
 
             idx_vtx_tri,label_charger,list_dif_line = check_charger(x_list,y_list, cluster_dict)
-            # plt.plot(0,0,"r^")
+            plt.plot(0,0,"r^")
             
-            # plt.plot([0,x_list[idx_vtx_tri]],[0,y_list[idx_vtx_tri]],"b")
-            # print("\n list of vertex tri angle charger : "+ str(list_dif_line))
+            plt.plot([0,x_list[idx_vtx_tri]],[0,y_list[idx_vtx_tri]],"b")
+            print("\n list of vertex tri angle charger : "+ str(list_dif_line))
             
             if list_dif_line == [] :
-                print("  _________________\n\n | ERROR NOT FONUD | XXXXXXXXXXXXXXXXXXXXXXX \n  _________________\n")
+                print("  _________________\n\n | ERROR NOT FONUD | \n  _________________\n")
                 theta_vertex = 99
                 distance_vertex = 99
                 theta_blue = 99
                 distance_blue  = 99
             else:
                 print("  _______\n\n | FOUND | \n  _______\n")
-                # plt.plot(x_list[idx_vtx_tri],y_list[idx_vtx_tri],"r*")
-                self.pose_msg.pose.position.x = x_list[idx_vtx_tri]
-                self.pose_msg.pose.position.y = y_list[idx_vtx_tri]
+                plt.plot(x_list[idx_vtx_tri],y_list[idx_vtx_tri],"r*")
+
                 distance_vertex,theta_vertex = cal_theta_distance(x_list[idx_vtx_tri],y_list[idx_vtx_tri])
 
-                # print("c-> theta before rotate in z axis : "+ str(theta_vertex))
-                # # theta_vertex = theta_vertex-(math.pi)/2
-                # # theta_vertex = theta_vertex-math.pi/2
+                print("c-> theta before rotate in z axis : "+ str(theta_vertex))
+                # theta_vertex = theta_vertex-(math.pi)/2
+                # theta_vertex = theta_vertex-math.pi/2
 
-                # print("c-> theta after rotate in z axis: "+ str(theta_vertex))
+                print("c-> theta after rotate in z axis: "+ str(theta_vertex))
 
-                # print("c-> xy vertex point : ",[x_list[idx_vtx_tri],y_list[idx_vtx_tri]])
-                # print("c-> distance ,theta(radian) vertex point : ",[distance_vertex,theta_vertex])
+                print("c-> xy vertex point : ",[x_list[idx_vtx_tri],y_list[idx_vtx_tri]])
+                print("c-> distance ,theta(radian) vertex point : ",[distance_vertex,theta_vertex])
 
                 theta_vertex_degree = ((theta_vertex*180)/math.pi)
-                # print("c-> distance ,theta(degree) vertex point : ",[distance_vertex,theta_vertex_degree])
+                print("c-> distance ,theta(degree) vertex point : ",[distance_vertex,theta_vertex_degree])
 
                 
                 # x_cal =r*math.cos(t) 
@@ -453,42 +507,11 @@ class SCAN(Node):
 
                 # self.stack_theta_vertex.append(theta_vertex)
                 # self.stack_distance_vertex.append(distance_vertex)
-                # if distance_vertex > 0.05 and distance_vertex < -0.05:
-                #     self.key_bug_1 = 1
-    ####edit
-                # if self.msg_lock_blue == 0:
-                #     blue_x,blue_y= set_sub_goal(x_list,y_list,cluster_dict,label_charger,idx_vtx_tri,distance_blue=0.7+self.T_y_lidar_baselink)
-                #     print("c->blue piont : "+str([blue_x,blue_y]))
-                #     distance_blue,theta_blue = cal_theta_distance(blue_x,blue_y)
+                
 
-                #     # theta_blue = theta_blue
-
-                #     theta_blue_degree = ((theta_blue*180)/math.pi)
-
-                    
-
-                #     print("c-> theta_blue(radius) : "+str(theta_blue))
-                #     print("c-> theta_blue(degree) : "+str(theta_blue_degree))
-                #     print("c-> distance_blue : "+str(distance_blue))
-
-
-                #     print("----------------------------------00000000---------------------------------")
-                #     print("----------------------------------00000000---------------------------------")
-                #     print("----------------------------------00000000---------------------------------")
-
-
-                #     # self.stack_theta_blue.append(theta_blue_degree)
-                #     # self.stack_theta_blue.append(theta_blue)
-                #     # self.stack_distance_blue.append(distance_blue)
-                # else:
-                #     theta_blue = 0.0
-                #     distance_blue = 0.0
-                #     print("----------------------------------1111111---------------------------------")
-                #     print("----------------------------------1111111---------------------------------")
-                #     print("----------------------------------1111111---------------------------------")
 
                 blue_x,blue_y= set_sub_goal(x_list,y_list,cluster_dict,label_charger,idx_vtx_tri,distance_blue=0.7+self.T_y_lidar_baselink)
-                # print("c->blue piont : "+str([blue_x,blue_y]))
+                print("c->blue piont : "+str([blue_x,blue_y]))
                 distance_blue,theta_blue = cal_theta_distance(blue_x,blue_y)
 
                 # theta_blue = theta_blue
@@ -497,9 +520,13 @@ class SCAN(Node):
 
                 
 
-                # print("c-> theta_blue(radius) : "+str(theta_blue))
-                # print("c-> theta_blue(degree) : "+str(theta_blue_degree))
-                # print("c-> distance_blue : "+str(distance_blue))
+                print("c-> theta_blue(radius) : "+str(theta_blue))
+                print("c-> theta_blue(degree) : "+str(theta_blue_degree))
+                print("c-> distance_blue : "+str(distance_blue))
+                # self.stack_theta_blue.append(theta_blue_degree)
+                # self.stack_theta_blue.append(theta_blue)
+                # self.stack_distance_blue.append(distance_blue)
+                plt.show()
             return theta_vertex,distance_vertex,theta_blue,distance_blue
 
 ##########################################################################################################################################################################       
@@ -524,7 +551,7 @@ class SCAN(Node):
         self.stack_distance_blue[2] = self.stack_distance_blue[1]
         self.stack_distance_blue[1] = self.stack_distance_blue[0]
         
-        # print("moving stack data")
+        print("moving stack data")
 
         if theta_vertex != 99 :
             
@@ -546,54 +573,33 @@ class SCAN(Node):
         # print((self.stack_theta_vertex[3]))
 
         # print((self.stack_theta_vertex[0])+(self.stack_theta_vertex[1])+(self.stack_theta_vertex[2])+(self.stack_theta_vertex[3]))
-        # print(self.stack_theta_vertex)        
+        print(self.stack_theta_vertex)        
         # # print(theta_blue)
         # # print(call_scan)
         if self.key_pub_to_move <= 0 :
-            # print(" data enough to avg")
-            # print("\n ----- avg ----- \n")
-            # print("stack_theta_vertex : \n"+str(self.stack_theta_vertex))
+            print(" data enough to avg")
+            print("\n ----- avg ----- \n")
+            print("stack_theta_vertex : \n"+str(self.stack_theta_vertex))
             self.avg_vertex_theta =(sum(self.stack_theta_vertex)/len(self.stack_theta_vertex))
-            # print("avg stack_theta_vertex: "+str(self.avg_vertex_theta))
+            print("avg stack_theta_vertex: "+str(self.avg_vertex_theta))
             
-            # print("")
-            # print("stack_distance_vertex : \n"+str(self.stack_distance_vertex))
+            print("")
+            print("stack_distance_vertex : \n"+str(self.stack_distance_vertex))
             self.avg_vertex_distance = (sum(self.stack_distance_vertex)/len(self.stack_theta_vertex))
-            # print("avg stack_distance_vertex: "+str(self.avg_vertex_distance))
+            print("avg stack_distance_vertex: "+str(self.avg_vertex_distance))
 
 
-            # print("stack_theta_blue : \n"+str(self.stack_theta_blue))
+            print("stack_theta_blue : \n"+str(self.stack_theta_blue))
             self.avg_blue_theta =(sum(self.stack_theta_blue)/len(self.stack_theta_blue))
-            # print("avg stack_theta_blue: "+str(self.avg_blue_theta))
+            print("avg stack_theta_blue: "+str(self.avg_blue_theta))
             
-            # print("")
-            # print("stack_distance_blue : \n"+str(self.stack_distance_blue))
+            print("")
+            print("stack_distance_blue : \n"+str(self.stack_distance_blue))
             self.avg_blue_distance = (sum(self.stack_distance_blue)/len(self.stack_theta_blue))
-            # print("avg stack_distance_blue: "+str(self.avg_blue_distance))
+            print("avg stack_distance_blue: "+str(self.avg_blue_distance))
 
-        # plt.show()
+            
                 
-        # self.key_avg_scan = 0
-
-
-        
-            msg_vertex_distance= Float32()
-            msg_vertex_theta= Float32()
-            msg_blue_distance = Float32()
-            msg_blue_theta = Float32()
-            
-
-            msg_vertex_distance.data = self.avg_vertex_distance
-            msg_vertex_theta.data = self.avg_vertex_theta
-            
-            msg_blue_distance.data = self.avg_blue_distance
-            msg_blue_theta.data = self.avg_blue_theta
-
-            self.vertex_distance_publisher.publish(msg_vertex_distance)
-            self.vertex_theta_publisher.publish(msg_vertex_theta)
-            self.blue_distance_publisher.publish(msg_blue_distance)
-            self.blue_theta_publisher.publish(msg_blue_theta)
-            self.publisher_pose.publish(self.pose_msg)
         else:
             print("waiting data...")
         # msg_main = Float32()
