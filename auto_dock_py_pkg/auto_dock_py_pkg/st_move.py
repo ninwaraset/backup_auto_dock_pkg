@@ -198,7 +198,7 @@ class MOVE(Node):
         elif self.key_st == 5:
             
             
-            kp_4_1 = 0.2
+            kp_4_1 = 0.1
             e_4_1 = self.avg_vertex_theta
             msg_cmd_vel.angular.z = e_4_1*kp_4_1
         

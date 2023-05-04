@@ -73,7 +73,7 @@ class SCAN(Node):
 
         self.msg_lock_blue = 0.0
 
-        self.color = ["#00FE08","#a37fff","#FE0000","#F07800","#f1c232","#00A170","#0072B5","#00FE08","#a37fff","#FE0000","#F07800","#f1c232","#00A170","#0072B5"]
+        self.color = ["#00FE08","#a37fff","#FE0000","#F07800","#f1c232","#00A170","#0072B5","#00FE08","#a37fff","#FE0000","#F07800","#f1c232","#00A170","#0072B5","#00FE08","#a37fff","#FE0000","#F07800","#f1c232","#00A170","#0072B5","#00FE08","#a37fff","#FE0000","#F07800","#f1c232","#00A170","#0072B5","#00FE08","#a37fff","#FE0000","#F07800","#f1c232","#00A170","#0072B5"]
 
     def listener_callback_1(self, msg):
         self.lidar_msgs = msg
@@ -358,12 +358,7 @@ class SCAN(Node):
         def set_sub_goal(x_list,y_list,cluster_dict,label_charger,idx_vtx_tri,radius_vertex = 0.18,distance_blue= 0.7):
             print("\n++ SET SUB GOAL ++")
             # plt.plot(x_list[idx_vtx_tri],y_list[idx_vtx_tri],"r^")
-            ax7.plot(x_list[idx_vtx_tri],y_list[idx_vtx_tri],"r^")
-            ax8.plot(x_list[idx_vtx_tri],y_list[idx_vtx_tri],"r^")
-            ax9.plot(x_list[idx_vtx_tri],y_list[idx_vtx_tri],"r^")
-            ax10.plot(x_list[idx_vtx_tri],y_list[idx_vtx_tri],"r^")
-            ax11.plot(x_list[idx_vtx_tri],y_list[idx_vtx_tri],"r^")
-            ax12.plot(x_list[idx_vtx_tri],y_list[idx_vtx_tri],"r^")
+            
             
             
             
@@ -586,6 +581,7 @@ class SCAN(Node):
                 distance_vertex = 99
                 theta_blue = 99
                 distance_blue  = 99
+                plt.cla
             else:
                 print("  _______\n\n | FOUND | \n  _______\n")
                 # plt.plot(x_list[idx_vtx_tri],y_list[idx_vtx_tri],"r*")
@@ -606,7 +602,12 @@ class SCAN(Node):
 
                 theta_vertex_degree = ((theta_vertex*180)/math.pi)
                 print("c-> distance ,theta(degree) vertex point : ",[distance_vertex,theta_vertex_degree])
-
+                ax7.plot(x_list[idx_vtx_tri],y_list[idx_vtx_tri],color ="#FE0000",marker="*")
+                ax8.plot(x_list[idx_vtx_tri],y_list[idx_vtx_tri],color ="#FE0000",marker="*")
+                ax9.plot(x_list[idx_vtx_tri],y_list[idx_vtx_tri],color ="#FE0000",marker="*")
+                ax10.plot(x_list[idx_vtx_tri],y_list[idx_vtx_tri],color ="#FE0000",marker="*")
+                ax11.plot(x_list[idx_vtx_tri],y_list[idx_vtx_tri],color ="#FE0000",marker="*")
+                ax12.plot(x_list[idx_vtx_tri],y_list[idx_vtx_tri],color ="#FE0000",marker="*")
                 
                 # x_cal =r*math.cos(t) 
                 # y_cal = r*math.sin(t)
@@ -668,6 +669,7 @@ class SCAN(Node):
                 print("c-> distance_blue : "+str(distance_blue))
                 # plt.cla
                 # plt.show()
+                
             return theta_vertex,distance_vertex,theta_blue,distance_blue
 
 ##########################################################################################################################################################################       

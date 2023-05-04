@@ -34,6 +34,8 @@ class PathP(Node):
         self.color = ["pink","red","orange","brown","blue","green","yellow","cyan"]
         self.zxc = 0
         fig, ( self.ax1, self.ax2) = plt.subplots(1,2)
+        self.ax1.set_title('real odometry')
+        self.ax2.set_title('odometry')
 
     def listener_callback(self, msg):
         
@@ -64,14 +66,14 @@ class PathP(Node):
         # plt.plot(self.xy,"r.")
         self.zxc += 1 
         print(self.zxc)
-        theta = 75 *(math.pi/180)
+        theta = -5 *(math.pi/180)
         x_bar = self.x*math.cos(theta) -self.y*math.sin(theta)
         y_bar = self.x*math.sin(theta)+ self.y*math.sin(theta)
         self.ax2.plot(x_bar,y_bar,color=self.color[int(self.key)-1],marker ="1")
         self.ax1.plot(self.x,self.y,"kx")
         if self.key == 7:
             plt.show()
-        # if self.zxc == 100 : plt.show()
+        if self.zxc == 100 : plt.show()
 
 def main(args=None):
     rclpy.init(args=args)
